@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Amplify, { API, graphqlOperation } from "aws-amplify";
-import { createTodo, updateTodo } from "./graphql/mutations";
+import { createTodo, updateTodo, deleteTodo } from "./graphql/mutations";
 import { listTodos } from "./graphql/queries";
 import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
 
@@ -41,9 +41,9 @@ const App = () => {
     try {
       if (!formState.name || !formState.description) return;
       const todo = { ...formState };
-      setTodos([...todos, todo]);
       setFormState(initialState);
       await API.graphql(graphqlOperation(createTodo, { input: todo }));
+      fetchTodos();
     } catch (err) {
       console.log("error creating todo:", err);
     }
@@ -58,19 +58,34 @@ const App = () => {
   }
 
   async function toggleTodo(event) {
+    if (event.target.id) {
+      let todoDetails = {
+        id: event.target.id,
+        completed: false,
+      };
+
+      if (event.target.classList.contains("completed")) {
+        updateTodoStatus(todoDetails);
+      } else {
+        todoDetails.completed = true;
+        updateTodoStatus(todoDetails);
+      }
+
+      event.target.classList.toggle("completed");
+    }
+  }
+
+  async function removeTodo(event) {
     let todoDetails = {
-      id: event.target.id,
-      completed: false,
+      id: event.target.parentElement.id,
     };
 
-    if (event.target.classList.contains("completed")) {
-      updateTodoStatus(todoDetails);
-    } else {
-      todoDetails.completed = true;
-      updateTodoStatus(todoDetails);
+    try {
+      await API.graphql(graphqlOperation(deleteTodo, { input: todoDetails }));
+      fetchTodos();
+    } catch (err) {
+      console.log("Error deleting todo", err);
     }
-
-    event.target.classList.toggle("completed");
   }
 
   return (
@@ -109,23 +124,28 @@ const App = () => {
         </div>
         <div>
           <h2>To-Dos:</h2>
-          <p>Click to toggle to-do item, or delete (coming soon)</p>
-          {todos.map((todo, index) => (
-            <div
-              key={todo.id ? todo.id : index}
-              id={todo.id ? todo.id : index}
-              className={`todo${todo.completed ? " completed" : ""}`}
-              style={styles.todo}
-              onClick={toggleTodo}
-            >
-              <p className="todoName" style={styles.todoName}>
-                {todo.name}
-              </p>
-              <p className="todoDescription" style={styles.todoDescription}>
-                {todo.description}
-              </p>
-            </div>
-          ))}
+          <p>Click to toggle a to-do item, or click 'x' to remove</p>
+          {todos
+            .sort((a, b) => a.createdAt > b.createdAt)
+            .map((todo, index) => (
+              <div
+                key={todo.id ? todo.id : index}
+                id={todo.id ? todo.id : index}
+                className={`todo${todo.completed ? " completed" : ""}`}
+                style={styles.todo}
+                onClick={toggleTodo}
+              >
+                <div style={styles.remove} onClick={removeTodo}>
+                  ✖
+                </div>
+                <p className="todoName" style={styles.todoName}>
+                  {todo.name}
+                </p>
+                <p className="todoDescription" style={styles.todoDescription}>
+                  {todo.description}
+                </p>
+              </div>
+            ))}
         </div>
       </div>
     </div>
@@ -172,6 +192,18 @@ const styles = {
     padding: 20,
     borderRadius: 12,
     maxWidth: 400,
+    position: "relative",
+  },
+  remove: {
+    padding: "5px 7px",
+    position: "absolute",
+    top: 10,
+    right: 10,
+    color: "white",
+    border: "3px solid red",
+    borderRadius: 12,
+    fontWeight: "bold",
+    backgroundColor: "red",
   },
   input: {
     border: "none",

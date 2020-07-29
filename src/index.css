@@ -32,11 +32,11 @@ amplify-container.hydrated {
   cursor: pointer;
 }
 
-.todo > * {
+.todo > p {
   pointer-events: none;
 }
 
-.completed {
+.completed > p {
   opacity: 0.6;
   text-decoration: line-through;
 }
