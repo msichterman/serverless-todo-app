@@ -1,2 +1,2 @@
 # Serverless To-Do App
-This app was built with AWS Amplify
+A serverless todo app built with AWS Amplify to learn the basics of using the Amplify CLI to create full-stack serverless projects with React, GraphQL, and DynamoDB.
