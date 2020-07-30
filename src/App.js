@@ -102,8 +102,8 @@ const App = () => {
           <h2>Create To-Do:</h2>
           <p>
             Boost your productivity with to-dos!{" "}
-            <span role="img" aria-label="winkey face">
-              😉
+            <span role="img" aria-label="hourglass">
+              ⏳
             </span>
           </p>
           <input
